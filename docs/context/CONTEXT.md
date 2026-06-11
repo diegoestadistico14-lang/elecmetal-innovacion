@@ -144,12 +144,12 @@ Orden recomendado para pasar de cero a primer flujo funcional. Cada paso incluye
 
 **Check**: Directora activa evaluacion. Evaluador genera resultados en `evaluations.results`. Directora revisa y valida.
 
-### Paso 10: Panel directora y Deomite
+### Paso 10: Panel directora y comité
 
 1. Frontend `(admin)/` protegido: solo rol `directora` o `admin`
 2. Vista de iniciativas pendientes de evaluacion
 3. Vista de resultados de Evaluador con campos editables
-4. Registro de veredicto final (aprobada/rechazada/pendiente) — lo ingresa la directora tras decision del Deomite
+4. Registro de veredicto final (aprobada/rechazada/pendiente) — lo ingresa la directora tras decision del comité
 
 **Check**: Directora ve todas las iniciativas. Activa evaluacion, revisa resultados, registra veredicto.
 
@@ -173,10 +173,10 @@ Orden recomendado para pasar de cero a primer flujo funcional. Cada paso incluye
 
 ## Project Summary
 
-Plataforma conversacional donde trabajadores de Elecmetal postulan iniciativas de innovacion guiados por Clara (agente IA). La directora de innovacion revisa, evalua y lleva las iniciativas al Deomite (comite) para decision final.
+Plataforma conversacional donde trabajadores de Elecmetal postulan iniciativas de innovacion guiados por Clara (agente IA). La directora de innovacion revisa, evalua y lleva las iniciativas al comité (comite) para decision final.
 
 **Agentes IA**: Clara (postulacion guiada, bloques A-G), Analista de Oportunidad (TAM/SAM/SOM), Evaluador (columnas 26-38).
 
-**Flujo**: Postulante habla con Clara → Clara genera DBI → Sistema parsea 25 campos → Mail a postulante + notificacion a directora → Directora activa Evaluador → Deomite decide.
+**Flujo**: Postulante habla con Clara → Clara genera DBI → Sistema parsea 25 campos → Mail a postulante + notificacion a directora → Directora activa Evaluador → comité decide.
 
 **Stack**: Next.js 14+ (frontend), FastAPI (backend), PostgreSQL via Supabase (datos + auth), Goose (migraciones), OpenAI GPT-4o (agentes).

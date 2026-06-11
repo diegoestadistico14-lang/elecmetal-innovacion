@@ -265,7 +265,7 @@ COMMENT ON COLUMN evaluations.status IS 'Estado: pending, in_progress, completed
 COMMENT ON COLUMN evaluations.results IS 'Resultados del Evaluador: columnas 26-38 en JSONB flexible.';
 COMMENT ON COLUMN evaluations.reviewed_by IS 'Directora que reviso y valido los resultados (nullable).';
 COMMENT ON COLUMN evaluations.reviewed_at IS 'Momento de la validacion.';
-COMMENT ON COLUMN evaluations.veredicto IS 'Decision del Deomite: aprobada, rechazada, pendiente.';
+COMMENT ON COLUMN evaluations.veredicto IS 'Decision del comité: aprobada, rechazada, pendiente.';
 COMMENT ON COLUMN evaluations.created_at IS 'Fecha de creacion de la evaluacion.';
 COMMENT ON COLUMN evaluations.updated_at IS 'Ultima actualizacion de la evaluacion.';
 

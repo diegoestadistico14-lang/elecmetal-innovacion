@@ -189,7 +189,7 @@ dbi_generado → persistido → notificado → en_evaluacion → evaluado → va
 | en_evaluacion | Directora activa Evaluador | Directora |
 | evaluado | Evaluador genera resultados | Evaluador (IA) |
 | validado | Directora revisa resultados | Directora |
-| veredicto | Deomite decide | Deomite |
+| veredicto | comité decide | comité |
 
 ## Listas Controladas
 

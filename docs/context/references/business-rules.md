@@ -45,7 +45,7 @@
 **Regla:** Las columnas 26-38 se almacenan como JSONB. La directora puede revisar, ajustar y completar estos campos antes del veredicto.
 **Justificacion:** El esquema de salida del Evaluador no esta completamente definido. JSONB da flexibilidad sin bloquear el desarrollo.
 
-**Regla:** El veredicto final lo emite el Deomite Sandbox fuera del sistema. La plataforma solo registra el resultado (aprobada/rechazada/pendiente).
+**Regla:** El veredicto final lo emite el comité Sandbox fuera del sistema. La plataforma solo registra el resultado (aprobada/rechazada/pendiente).
 **Justificacion:** La decision es humana y colegiada. La plataforma es herramienta de soporte, no de decision automatica.
 
 ## Agentes IA
