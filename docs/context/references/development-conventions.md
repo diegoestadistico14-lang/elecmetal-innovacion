@@ -47,7 +47,12 @@ elecmetal-innovacion/
 │   │   │   ├── evaluador.py   # Orquestacion Evaluador
 │   │   │   ├── dbi_parser.py  # Parseo DBI → 25 campos
 │   │   │   └── notifications.py
+│   │   ├── workers/           # Procesos de fondo
+│   │   │   └── notifications.py  # Worker de envio de emails
 │   │   └── agents/            # Definiciones de agentes IA
+│   ├── Dockerfile             # Contenedor para Railway
+│   ├── railway.toml           # Deploy web service
+│   ├── railway.worker.toml    # Deploy worker process
 │   └── tests/
 ├── migrations/                # Archivos Goose .sql
 └── skills/                    # Skills de agentes (.skill, .md)

@@ -1,0 +1,16 @@
+# ─── Worker Service (Notifications) ─────────────────────────────────────────
+# En Railway: crear un SEGUNDO servicio en el mismo proyecto,
+# apuntar al mismo directorio /backend, y en Settings → Config File Path
+# escribir: railway.worker.toml
+#
+# Comparte las mismas variables de entorno que el servicio API.
+# No expone puerto HTTP — Railway no le asignará $PORT.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python -m app.workers.notifications"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
