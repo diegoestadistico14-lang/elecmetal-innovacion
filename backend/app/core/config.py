@@ -6,12 +6,12 @@ class Settings(BaseSettings):
 
     # Supabase / DB
     database_url: str
-    supabase_jwt_secret: str
-    supabase_url: str = ""
+    supabase_url: str
+    supabase_jwt_secret: str = ""
     supabase_service_role_key: str = ""
 
     # OpenAI
-    openai_api_key: str
+    openai_api_key: str = ""
 
     # Email
     resend_api_key: str = ""
