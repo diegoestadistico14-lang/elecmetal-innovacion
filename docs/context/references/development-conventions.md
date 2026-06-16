@@ -110,7 +110,7 @@ elecmetal-innovacion/
 
 ### Autenticacion
 - JWT de Supabase en header `Authorization: Bearer <token>`
-- Backend valida el JWT contra la clave publica de Supabase
+- Backend valida el JWT via JWKS (ES256) desde `{SUPABASE_URL}/auth/v1/.well-known/jwks.json`
 - RLS en PostgreSQL como segunda capa (opcional para MVP)
 
 ## Setup Inicial
@@ -133,7 +133,8 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Editar .env: DATABASE_URL, SUPABASE_JWT_SECRET, OPENAI_API_KEY
+# Editar .env: DATABASE_URL (requerido), SUPABASE_URL (requerido).
+	# OPENAI_API_KEY y RESEND_API_KEY son opcionales al inicio
 uvicorn app.main:app --reload
 
 # 4. Migraciones
@@ -144,6 +145,17 @@ goose -dir . postgres "$DATABASE_URL" up
 # Configurar Google OAuth y Magic Link en Supabase Dashboard
 # El trigger handle_new_user() crea profiles automaticamente
 ```
+
+## Deploy (Railway)
+
+El backend se deploya en Railway con Dockerfile + railway.toml.
+
+- **Root Directory**: `backend/`
+- **Config File Path**: `backend/railway.toml`
+- **Variables requeridas**: `DATABASE_URL`, `SUPABASE_URL`. `OPENAI_API_KEY` y `RESEND_API_KEY` cuando se implementen agentes y notificaciones.
+- **Health check**: Railway usa `GET /api/v1/health` cada 30s.
+- **Worker**: servicio separado con `railway.worker.toml`, sin puerto HTTP, ejecuta `python -m app.workers.notifications`.
+- **Deploy**: automático desde `main` (GitHub integration).
 
 ## Testing
 
@@ -183,9 +195,12 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Backend (.env)
+# Backend (.env) — requeridos
 DATABASE_URL=postgresql://postgres:<password>@<host>:5432/postgres
-SUPABASE_JWT_SECRET=<jwt-secret>
-OPENAI_API_KEY=sk-...
-RESEND_API_KEY=re_...
+SUPABASE_URL=https://<project-ref>.supabase.co
+
+# Backend (.env) — opcionales (agregar al implementar features)
+# OPENAI_API_KEY=sk-...
+# RESEND_API_KEY=re_...
+# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```

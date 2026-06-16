@@ -69,7 +69,7 @@ Orden recomendado para pasar de cero a primer flujo funcional. Cada paso incluye
 ### Paso 2: Backend scaffold
 
 1. Crear proyecto FastAPI con estructura segun `references/development-conventions.md` > Estructura del Proyecto
-2. Configurar `.env` con `DATABASE_URL`, `SUPABASE_JWT_SECRET`, `OPENAI_API_KEY`
+2. Configurar `.env` con `DATABASE_URL` y `SUPABASE_URL` (requeridos). `OPENAI_API_KEY` y `RESEND_API_KEY` se agregan al implementar agentes y notificaciones
 3. Implementar pool asyncpg (`core/database.py`) y validacion JWT (`core/security.py`)
 4. Health check: `GET /api/v1/health` que verifica conexion a DB
 
