@@ -8,10 +8,11 @@ export default function LoginPage() {
   const supabase = createClient();
 
   const handleGoogleLogin = async () => {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback`,
       },
     });
   };
@@ -54,7 +55,7 @@ export default function LoginPage() {
         </button>
 
         <p className="text-center text-xs text-gray-500">
-          Solo cuentas @elecmetal.cl autorizadas
+          Proyecto desarrollado para Elecmetal
         </p>
       </div>
     </div>

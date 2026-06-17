@@ -10,7 +10,7 @@ Ver [`docs/context/CONTEXT.md`](docs/context/CONTEXT.md) — boot sequence de 12
 
 | Componente | Tecnologia |
 |------------|-----------|
-| Frontend | Next.js 14+ (App Router) |
+| Frontend | Next.js 15+ (App Router, `src/`) |
 | Backend | FastAPI (Python 3.11+) |
 | Base de datos | PostgreSQL via Supabase |
 | Autenticacion | Supabase Auth (Google OAuth, Magic Link) |

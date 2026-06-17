@@ -76,35 +76,36 @@ Postulacion de innovacion. El DBI generado por Clara se parsea a estos 25 campos
 | status | TEXT | NO | Estado: dbi_generado → persistido → notificado → en_evaluacion → evaluado → validado → veredicto |
 | initiative_code | TEXT | NO | UNIQUE. Formato: INI-AAAA-NNN |
 | title | TEXT | NO | Titulo del DBI |
-| initiative_type | TEXT | NO | interna, externa |
+| initiative_type | TEXT | NO | interna, externa, mixta (migr. 002) |
 | postulation_date | DATE | NO | Fecha de postulacion |
 | area | TEXT | NO | Area del postulante |
 | applicant_name | TEXT | NO | Nombre del postulante |
 | problem | TEXT | NO | Bloque A |
 | solution | TEXT | NO | Bloque B.1 |
 | economic_impact | TEXT | SI | Bloque B.2 |
-| trl | TEXT | SI | Bloque B.3: TRL 1-2/3-4/5-6/7-9 |
+| trl | SMALLINT | SI | Bloque B: nivel 1-9 (migr. 002) |
 | scalability | TEXT | SI | Bloque B.4: Local/Interna/Externa |
 | internal_client | TEXT | SI | Bloque C |
 | external_client | TEXT | SI | Bloque C |
-| crl | TEXT | SI | Bloque C: CRL 1-4 |
+| crl | SMALLINT | SI | Bloque C: nivel 1-9 (migr. 002) |
 | sponsor | TEXT | SI | Bloque E |
 | internal_team | TEXT | SI | Bloque E |
 | external_team | TEXT | SI | Bloque E |
 | estimated_duration | TEXT | SI | Bloque E |
 | main_doubt | TEXT | SI | Bloque F |
 | key_condition | TEXT | SI | Bloque F |
-| value_capture | TEXT | SI | Bloque F: ahorro/venta/competitividad/nuevo negocio/no claro |
-| brl | TEXT | SI | Bloque F: BRL 1-4 |
+| value_capture | TEXT | SI | Bloque F: mecanismo (texto libre, migr. 002) |
+| brl | SMALLINT | SI | Bloque F: nivel 1-9 (migr. 002) |
 | technical_milestones | TEXT | SI | Bloque G |
 | financial_milestones | TEXT | SI | Bloque G |
-| return_horizon | TEXT | SI | Bloque G: 0-6/6-12/12-18/18-24/+24/no se |
+| return_horizon | SMALLINT | SI | Bloque G: meses (migr. 002) |
 | strategic_alignment | TEXT | SI | Bloque D: asignado por equipo innovacion |
 | dbi_raw_text | TEXT | SI | Texto original del DBI |
+| dbi_extra | JSONB | SI | Campos plantilla v5.9 sin columna (migr. 002). Ver dbi-template.md |
 | created_at | TIMESTAMPTZ | NO | |
 | updated_at | TIMESTAMPTZ | NO | |
 
-**Constraints**: `pk_initiatives`, `fk_initiatives_sessions`, `fk_initiatives_profiles`, `uq_initiatives_code`, 7 CHECKs para status, type, trl, scalability, crl, brl, return_horizon, value_capture
+**Constraints**: `pk_initiatives`, `fk_initiatives_sessions`, `fk_initiatives_profiles`, `uq_initiatives_code`, CHECKs para status, type (incl. `mixta`), trl/crl/brl (1-9), scalability, return_horizon (≥0). Tras migr. 002, `value_capture` ya no tiene CHECK (texto libre).
 **Indexes**: `idx_initiatives_user_id`, `idx_initiatives_session_id`, `idx_initiatives_status`
 
 ### evaluations
@@ -193,23 +194,12 @@ dbi_generado → persistido → notificado → en_evaluacion → evaluado → va
 
 ## Listas Controladas
 
-### TRL
-- `TRL 1-2`: Solo una idea
-- `TRL 3-4`: Concepto con alguna prueba
-- `TRL 5-6`: Prototipo probado en condiciones reales
-- `TRL 7-9`: Validado en produccion
+### TRL / CRL / BRL (escala 1-9, migr. 002)
+Desde la plantilla DBI v5.9 los tres son un **nivel entero unico 1-9** (no bandas). Las rubricas completas nivel a nivel (con lectura Interna/Externa para CRL y BRL) viven en `../../../skills/Clara_KnowledgeBase_v5_9.md` > "Rubricas de madurez 1-9". El Evaluador convierte nivel→score (1/3/5) segun las bandas de ese mismo archivo; el DBI siempre guarda el nivel unico.
 
-### CRL
-- `CRL 1`: Suposicion, sin contacto con cliente
-- `CRL 2`: Interes declarado
-- `CRL 3`: Participo en diseno/prueba
-- `CRL 4`: Ya lo usa
-
-### BRL
-- `BRL 1`: Modelo de negocio no claro
-- `BRL 2`: Hipotesis sin validar
-- `BRL 3`: Estimaciones fundadas
-- `BRL 4`: Validado en piloto
+- **TRL** — madurez tecnica: 1 (solo idea) … 9 (en uso continuo en operacion).
+- **CRL** — validacion del cliente/area: 1 (hipotesis sin contacto) … 9 (adopcion repetible).
+- **BRL** — madurez del modelo/caso de valor: 1 (no claro como genera valor) … 9 (modelo estable y en expansion).
 
 ### Escalabilidad
 - `Local`: Impacto en area/planta especifica
@@ -217,7 +207,7 @@ dbi_generado → persistido → notificado → en_evaluacion → evaluado → va
 - `Externa`: Impacto en clientes/mercados externos
 
 ### Horizonte de Retorno
-- `0-6`, `6-12`, `12-18`, `18-24`, `+24` meses, `no se`
+- Plantilla v5.9 / migr. 002: **meses exactos** (SMALLINT). (El esquema original usaba bandas `0-6/6-12/12-18/18-24/+24/no se`.)
 
 ### Value Capture
 - `ahorro`: Reduccion de costos

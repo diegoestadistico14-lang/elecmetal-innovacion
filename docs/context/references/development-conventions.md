@@ -4,7 +4,7 @@
 
 | Componente | Tecnologia | Version |
 |------------|-----------|---------|
-| Frontend | Next.js | 14+ (App Router) |
+| Frontend | Next.js | 15.5+ (App Router, `src/`) |
 | Backend | FastAPI | 0.110+ |
 | Base de datos | PostgreSQL via Supabase | 15+ |
 | Autenticacion | Supabase Auth | — |
@@ -16,18 +16,23 @@
 
 ```
 elecmetal-innovacion/
-├── frontend/                  # Next.js App Router
-│   ├── app/
-│   │   ├── (auth)/            # Login, Magic Link
-│   │   ├── (dashboard)/       # Sidebar + chat Clara / Analista
-│   │   └── (admin)/           # Panel directora
-│   ├── components/
-│   │   ├── chat/              # Componentes de interfaz conversacional
-│   │   ├── initiatives/       # Cards, listados, DBI viewer
-│   │   └── ui/                # Design system compartido
-│   └── lib/
-│       ├── supabase/          # Cliente Supabase (auth + DB)
-│       └── api/               # Cliente FastAPI
+├── frontend/                  # Next.js 15 App Router (codigo en src/)
+│   ├── src/
+│   │   ├── middleware.ts      # Refresca sesion Supabase + protege rutas
+│   │   ├── app/
+│   │   │   ├── layout.tsx     # Root layout (fuentes, metadata, <html>)
+│   │   │   ├── page.tsx       # "/" → redirect a /dashboard
+│   │   │   ├── login/         # Pagina publica de login (Google OAuth)
+│   │   │   ├── auth/
+│   │   │   │   └── callback/  # Route handler: intercambia code OAuth por sesion
+│   │   │   └── dashboard/     # Area autenticada (layout + paginas)
+│   │   │       ├── layout.tsx # Sidebar + boton cerrar sesion
+│   │   │       ├── page.tsx   # Home del dashboard
+│   │   │       └── actions.ts # Server Actions (signOut, etc.)
+│   │   └── lib/
+│   │       ├── supabase/      # Clientes Supabase SSR (client/server/middleware)
+│   │       └── api.ts         # Cliente FastAPI (fetchMe, healthCheck)
+│   ├── components/            # (futuro) chat/, initiatives/, ui/
 ├── backend/                   # FastAPI
 │   ├── app/
 │   │   ├── api/
@@ -74,10 +79,12 @@ elecmetal-innovacion/
 - **Logging**: structlog con correlation_id por request
 
 ### Frontend (Next.js/TypeScript)
+- **Ubicacion**: todo el codigo vive en `frontend/src/` (alias `@/` → `src/`). No usar `frontend/app/`.
 - **Estado del chat**: `useChat` de Vercel AI SDK o implementacion propia con Server-Sent Events
-- **Componentes**: Server Components por defecto, Client Components solo cuando se necesita interactividad
-- **Estilos**: Tailwind CSS
-- **Rutas**: App Router con layouts anidados: `(auth)` publico, `(dashboard)` autenticado, `(admin)` solo directora
+- **Componentes**: Server Components por defecto, Client Components (`"use client"`) solo cuando se necesita interactividad
+- **Estilos**: Tailwind CSS v4 (config en `postcss.config.mjs`, sin `tailwind.config`)
+- **Rutas**: App Router con carpetas reales (no route groups): `login/` y `auth/` publicas, `dashboard/` autenticada. La proteccion se hace en `middleware.ts`, no en route groups.
+- **Server Actions**: declararlos en archivos dedicados con `"use server"` al inicio del modulo (p.ej. `dashboard/actions.ts`). NO definir Server Actions inline dentro de un Server Component — provoca el error `__webpack_modules__[moduleId] is not a function` en el bundler de Next 15.
 
 ### Base de Datos
 - **Naming**: tablas en plural snake_case, columnas snake_case, PK `id`, FK `[tabla]_id`
@@ -110,8 +117,80 @@ elecmetal-innovacion/
 
 ### Autenticacion
 - JWT de Supabase en header `Authorization: Bearer <token>`
-- Backend valida el JWT via JWKS (ES256) desde `{SUPABASE_URL}/auth/v1/.well-known/jwks.json`
+- Backend valida el JWT via JWKS (ES256) desde `{SUPABASE_URL}/auth/v1/.well-known/jwks.json` (`backend/app/core/security.py`, dependencia `get_current_user`)
 - RLS en PostgreSQL como segunda capa (opcional para MVP)
+
+## Autenticacion en el Frontend (Supabase SSR)
+
+El frontend usa `@supabase/ssr` (NO el flujo client-only). La sesion vive en cookies HTTP-only y se comparte entre Server Components, Route Handlers y el middleware. Hay **tres** formas de crear el cliente, segun el contexto de ejecucion:
+
+| Archivo | Helper | Cuando usarlo |
+|---------|--------|---------------|
+| `src/lib/supabase/client.ts` | `createBrowserClient` | Client Components (`"use client"`), p.ej. el boton de login |
+| `src/lib/supabase/server.ts` | `createServerClient` + `cookies()` | Server Components, Route Handlers, Server Actions |
+| `src/lib/supabase/middleware.ts` | `createServerClient` sobre `request/response` | Solo dentro de `middleware.ts` |
+
+### Habilitar Google OAuth en Supabase (setup inicial)
+
+Antes de que el flujo de login funcione, el provider de Google debe estar habilitado. Es un proceso de dos lados: Google Cloud Console (genera las credenciales) y Supabase (las consume).
+
+**1. Obtener la URL de callback de Supabase**
+
+En Supabase Dashboard → `Authentication > Providers > Google`. Copiar el "Callback URL (for OAuth)", que tiene la forma:
+
+```
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+> Esta URL es la que Google necesita, NO `http://localhost:3000/auth/callback`. El callback de la app (`/auth/callback`) se registra aparte, en "Redirect URLs" (ver mas abajo).
+
+**2. Crear credenciales en Google Cloud Console** (`console.cloud.google.com`)
+
+1. Crear (o seleccionar) un proyecto.
+2. `APIs & Services > OAuth consent screen`: elegir tipo **External**, completar nombre de la app, correo de soporte y dominio. Agregar los scopes basicos (`email`, `profile`, `openid`). Mientras este en modo "Testing", agregar los correos de prueba autorizados.
+3. `APIs & Services > Credentials > Create Credentials > OAuth client ID`:
+   - Application type: **Web application**.
+   - **Authorized JavaScript origins**: el origen de la app (`http://localhost:3000` en local, y el dominio de produccion).
+   - **Authorized redirect URIs**: pegar la **Callback URL de Supabase** del paso 1 (`https://<project-ref>.supabase.co/auth/v1/callback`).
+4. Guardar y copiar el **Client ID** y el **Client Secret**.
+
+**3. Configurar el provider en Supabase**
+
+1. Supabase Dashboard → `Authentication > Providers > Google` → activar **Enable Sign in with Google**.
+2. Pegar **Client ID** y **Client Secret**. Guardar.
+
+**4. Registrar los Redirect URLs de la app**
+
+En `Authentication > URL Configuration` agregar (produccion y local):
+
+- Site URL: el dominio por defecto (p.ej. `http://localhost:3000` en local).
+- Redirect URLs: `http://localhost:3000/auth/callback`, `http://localhost:3000/login` y sus equivalentes de produccion (`https://<dominio>/auth/callback`, `/login`).
+
+**Check**: en `/login`, el boton de Google abre el consent screen, se elige una cuenta autorizada y la app redirige a `/dashboard`. Si rebota a `/login?error=auth_callback_error`, revisar que el redirect URI de Google coincida exacto con la callback URL de Supabase, y que el correo este en la lista de testers (si el consent screen esta en modo Testing).
+
+### Flujo de login (Google OAuth)
+
+1. **`/login`** (Client Component): llama `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: \`${origin}/auth/callback\` } })`.
+2. Google redirige a **`/auth/callback?code=...`** (Route Handler `route.ts`), que ejecuta `supabase.auth.exchangeCodeForSession(code)` y setea las cookies de sesion.
+3. El callback redirige a `/dashboard` (o `?next=`). Si falla, vuelve a `/login?error=auth_callback_error`.
+4. **`middleware.ts`** corre en cada request: refresca la sesion y aplica la proteccion de rutas.
+
+### Proteccion de rutas (middleware)
+
+`updateSession` (en `src/lib/supabase/middleware.ts`) define que rutas son publicas:
+
+- Rutas publicas: las que empiezan con `/login` o `/auth`.
+- Sin usuario + ruta no publica → redirect a `/login`.
+- Con usuario + en `/login` → redirect a `/dashboard`.
+
+> **IMPORTANTE**: `/auth/*` DEBE tratarse como publica. Si el middleware redirige `/auth/callback` a `/login` (porque aun no hay sesion en ese instante), el `code` de OAuth nunca se intercambia y el login entra en loop (la pagina de login se recarga sola).
+
+### Lecciones aprendidas / gotchas
+
+- **Server Actions en archivo aparte**: ver convencion arriba. El `signOut` vive en `dashboard/actions.ts`, no inline en el layout.
+- **Limpiar cache tras cambios de directivas**: al mover/agregar `"use client"` / `"use server"`, borrar `.next` (`rm -rf frontend/.next`) y reiniciar `npm run dev` para evitar bundles corruptos.
+- **Redirect URLs en Supabase**: en `Authentication > URL Configuration` deben estar registradas tanto produccion (`https://<dominio>/auth/callback`, `/login`) como local (`http://localhost:3000/auth/callback`). El "Site URL" apunta al entorno por defecto.
+- **Puerto local**: el frontend corre en `:3000` (backend en `:8000`). Mantener `cors_origins` del backend y los Redirect URLs de Supabase alineados con ese puerto.
 
 ## Setup Inicial
 
@@ -123,7 +202,9 @@ cd elecmetal-innovacion
 # 2. Frontend
 cd frontend
 cp .env.example .env.local
-# Editar .env.local: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Editar .env.local con los valores de TU proyecto Supabase:
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+#   NEXT_PUBLIC_API_URL, NEXT_PUBLIC_SITE_URL (http://localhost:3000)
 npm install
 npm run dev
 
@@ -179,11 +260,13 @@ agent = await db.fetchrow(
 Los mensajes del usuario se envian al agente correspondiente via OpenAI API con `stream: true`. La respuesta se streamea al frontend via Server-Sent Events.
 
 ### Parseo del DBI
+Implementado en `backend/app/services/dbi_parser.py` (`parse_dbi(text) -> dict`). Contrato, delimitadores y mapeo en `docs/context/references/dbi-template.md`. Anclado por el golden fixture (`backend/tests/fixtures/dbi/`) y `tests/test_dbi_parser.py`.
+
 Cuando Clara indica que la conversacion termino (palabra clave o flag en metadata del mensaje), el backend:
 1. Recupera todos los mensajes de la sesion
 2. Busca el mensaje que contiene la plantilla DBI
-3. Parsea los bloques A-G usando los delimitadores de la plantilla
-4. Escribe los 25 campos en `initiatives`
+3. Llama `parse_dbi()` → estructura normalizada por bloque (parseo todo-o-nada: aborta si faltan anclas o un nivel TRL/CRL/BRL es invalido)
+4. Escribe las columnas de `initiatives` + el resto en `dbi_extra JSONB` (ver migr. 002)
 5. Transiciona el estado a `persistido`
 6. Dispara notificaciones
 
@@ -194,13 +277,23 @@ Cuando Clara indica que la conversacion termino (palabra clave o flag en metadat
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:8000
+# Origen publico de la app: base del redirect OAuth (<SITE_URL>/auth/callback).
+# En local debe coincidir con el puerto del dev server (3000).
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Backend (.env) — requeridos
 DATABASE_URL=postgresql://postgres:<password>@<host>:5432/postgres
 SUPABASE_URL=https://<project-ref>.supabase.co
+
+# Backend (.env) — CORS (incluir el puerto real del frontend)
+CORS_ORIGINS=http://localhost:3000
 
 # Backend (.env) — opcionales (agregar al implementar features)
 # OPENAI_API_KEY=sk-...
 # RESEND_API_KEY=re_...
 # SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
+
+> **Puertos en local**: frontend `:3000`, backend `:8000`. `NEXT_PUBLIC_API_URL` debe apuntar al backend y `CORS_ORIGINS` del backend debe incluir el origen del frontend (`http://localhost:3000`), de lo contrario las llamadas `fetch` desde el navegador fallan por CORS.
+
+> **Recursos independientes por dev**: cada desarrollador usa su **propio proyecto Supabase** (BD + provider de Google OAuth propios). Por eso `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` (frontend) y `DATABASE_URL`/`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` (backend) cambian entre devs y nunca se commitean. El Client ID/Secret de Google NO viven en `.env`: se configuran en el dashboard de cada proyecto Supabase (ver "Habilitar Google OAuth en Supabase"). Cada dev debe registrar su propia callback en Google (`{SUPABASE_URL}/auth/v1/callback`) y su `NEXT_PUBLIC_SITE_URL` en los Redirect URLs de Supabase.

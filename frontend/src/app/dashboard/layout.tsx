@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { signOut } from "./actions";
 
 export default async function DashboardLayout({
   children,
@@ -8,12 +9,6 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  const handleSignOut = async () => {
-    "use server";
-    const supabase = await createClient();
-    await supabase.auth.signOut();
-  };
 
   return (
     <div className="flex min-h-screen">
@@ -31,7 +26,7 @@ export default async function DashboardLayout({
         </nav>
         <div className="border-t pt-4">
           <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-          <form action={handleSignOut}>
+          <form action={signOut}>
             <button className="mt-2 text-xs text-red-600 hover:underline">
               Cerrar sesion
             </button>

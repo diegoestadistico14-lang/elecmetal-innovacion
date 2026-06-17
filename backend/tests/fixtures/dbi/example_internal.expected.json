@@ -1,0 +1,79 @@
+{
+  "header": {
+    "title": "Mantenimiento predictivo de hornos",
+    "postulation_date": "2026-06-10",
+    "area": "Fundición Planta Colina",
+    "applicant_name": "María Rojas",
+    "initiative_type": "interna"
+  },
+  "executive_summary": "Las paradas no planificadas de los hornos de inducción generan pérdidas de producción. Proponemos sensores de vibración y temperatura con alertas tempranas para anticipar fallas. Impacto estimado: USD 120.000/año en producción recuperada.",
+  "block_a_problem": {
+    "problem": "Los hornos de inducción se detienen sin aviso por fallas en bobinas y refractario.",
+    "why_it_matters": "Cada parada no planificada cuesta turnos completos de producción y daña el refractario.",
+    "who_has_it": "El equipo de operaciones de fundición y mantenimiento de Planta Colina.",
+    "current_solution": "Mantenimiento correctivo reactivo y rondas manuales sin datos en tiempo real."
+  },
+  "block_b_solution": {
+    "description": "Red de sensores IoT de vibración y temperatura en hornos, con un modelo que detecta patrones de falla y emite alertas tempranas.",
+    "differentiator_novelty_grade": "mejora relevante",
+    "differentiator_text": "combina sensores de bajo costo con el histórico de fallas propio de Elecmetal.",
+    "competition_grade": "identificados",
+    "competition_text": "existen suites SCADA comerciales, pero no calibradas a nuestros hornos.",
+    "economic_impact": {
+      "value": "USD 120.000/año",
+      "source": "registro de paradas 2025",
+      "beneficiary": "Elecmetal",
+      "classification": "Medio"
+    },
+    "market_size": null,
+    "trl": {
+      "level": 4,
+      "evidence": "prueba de sensores integrados en banco de laboratorio, mayo 2026."
+    },
+    "scalability": "Interna",
+    "market_repeatability": "otros hornos de plantas similares"
+  },
+  "block_c_client": {
+    "internal_client": "Jefatura de Operaciones de Fundición",
+    "external_client": null,
+    "target_client_type": "área usuaria interna",
+    "crl": {
+      "level": 5,
+      "evidence": "el área pidió avanzar y aportó requerimientos en reunión de abril 2026."
+    }
+  },
+  "block_d_alignment": {
+    "focus": null,
+    "horizon": null
+  },
+  "block_e_team": {
+    "applicant_area": "Fundición Planta Colina",
+    "internal_team": "María Rojas (ingeniería de procesos), un técnico de mantenimiento",
+    "external_team": null,
+    "sponsor": "Carlos Méndez / Gerente de Operaciones / Planta Colina",
+    "support_received": "espacio en planta para piloto",
+    "other_resources": "parciales",
+    "estimated_duration": "8 meses"
+  },
+  "block_f_risk": {
+    "main_doubt": "si los sensores resisten las condiciones de temperatura del horno.",
+    "key_condition": "las alertas anticipan la falla con al menos 24 horas",
+    "value_capture": "ahorro por producción recuperada y menor daño de refractario",
+    "uncertainty": {
+      "client": "baja",
+      "solution": "media",
+      "model": "media"
+    },
+    "brl": {
+      "level": 4,
+      "evidence": "caso de ahorro con costo de implementación y ahorro anual estimados, fuente registro 2025."
+    }
+  },
+  "block_g_milestones": {
+    "technical_milestones": "piloto en un horno + 2026-12-01 + reducción de 30% en paradas no planificadas",
+    "financial_milestones": "validar ahorro de USD 120k + 2027-06-01 + ahorro neto positivo",
+    "return_horizon_months": 12
+  },
+  "attached_evidence": ["registro_paradas_2025.xlsx", "foto_banco_sensores.jpg"],
+  "pending_blocks": []
+}

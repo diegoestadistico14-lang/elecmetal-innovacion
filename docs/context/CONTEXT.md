@@ -15,9 +15,12 @@ Modulo de contexto portable para que un agente (humano o IA) continue el desarro
 | Cambiar la logica de un agente IA | `references/business-rules.md` (Agentes IA) + `references/development-conventions.md` (Agentes IA) |
 | Agregar un nuevo rol o permiso | `references/business-rules.md` (Usuarios y Permisos) |
 | Entender el ciclo de vida de una iniciativa | `references/domain-model.md` (Maquina de Estados) + `references/business-rules.md` (Flujo de Postulacion) |
+| Implementar/entender el parseo del DBI (formato, delimitadores, mapeo a columnas) | `references/dbi-template.md` |
 | Configurar el entorno de desarrollo | `references/development-conventions.md` (Setup Inicial) |
 | Escribir tests | `references/development-conventions.md` (Testing) |
-| Conectar el frontend con Supabase Auth | `references/development-conventions.md` (Autenticacion) |
+| Conectar el frontend con Supabase Auth (login, OAuth, callback, middleware) | `references/development-conventions.md` (Autenticacion en el Frontend) |
+| Validar el JWT de Supabase en el backend | `references/development-conventions.md` (API Design > Autenticacion) |
+| Debuggear loop de login / `__webpack_modules__` | `references/development-conventions.md` (Autenticacion en el Frontend > Lecciones aprendidas) |
 
 ## Interaction Modes
 
@@ -57,7 +60,7 @@ Orden recomendado para pasar de cero a primer flujo funcional. Cada paso incluye
 ### Paso 1: Infraestructura
 
 1. Crear proyecto en Supabase (free tier o plan corporativo)
-2. Configurar Google OAuth en Supabase Dashboard → `Authentication > Providers`
+2. Configurar Google OAuth en Supabase Dashboard → `Authentication > Providers` (guia paso a paso en `references/development-conventions.md` > Habilitar Google OAuth en Supabase)
 3. Copiar `references/migration.sql` al proyecto y ejecutar con Goose:
    ```bash
    goose -dir migrations postgres "$DATABASE_URL" up
@@ -85,13 +88,14 @@ Orden recomendado para pasar de cero a primer flujo funcional. Cada paso incluye
 
 ### Paso 4: Frontend scaffold
 
-1. Crear proyecto Next.js 14+ (App Router) con estructura segun `references/development-conventions.md`
-2. Configurar `.env.local` con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Instalar y configurar cliente Supabase (`lib/supabase/client.ts`)
-4. Implementar layout base: `(auth)` publico (login con Google OAuth + Magic Link) y `(dashboard)` protegido (sidebar + area de chat vacia)
-5. Sidebar: nombre del usuario, boton nueva sesion, listado de sesiones activas
+1. Crear proyecto Next.js 15+ (App Router, codigo en `src/`) con estructura segun `references/development-conventions.md`
+2. Configurar `.env.local` con `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `NEXT_PUBLIC_API_URL`
+3. Configurar los 3 clientes Supabase SSR (`src/lib/supabase/{client,server,middleware}.ts`) — ver `references/development-conventions.md` (Autenticacion en el Frontend)
+4. Implementar el flujo de login: pagina publica `login/` (Google OAuth), route handler `auth/callback/route.ts` (intercambio de code) y `middleware.ts` (refresco de sesion + proteccion de rutas, con `/auth/*` y `/login` como publicas)
+5. Implementar `dashboard/` protegido: `layout.tsx` (sidebar + `signOut` en `dashboard/actions.ts`) y `page.tsx`
+6. Registrar los Redirect URLs en Supabase (`.../auth/callback`, `/login`) para produccion y local (`http://localhost:3000/auth/callback`)
 
-**Check**: Login con Google OAuth → redirect al dashboard → sidebar muestra nombre del usuario.
+**Check**: Login con Google OAuth → `/auth/callback` intercambia el code → redirect a `/dashboard` → el layout muestra el email del usuario y permite cerrar sesion.
 
 ### Paso 5: Chat minimo
 
@@ -115,15 +119,18 @@ Orden recomendado para pasar de cero a primer flujo funcional. Cada paso incluye
 
 ### Paso 7: DBI — Parseo y persistencia
 
-1. Cuando Clara indica cierre (el flag definido en el prompt), el backend:
-   - Recupera el mensaje que contiene la plantilla DBI (delimitadores predecibles)
-   - Parsea bloques A-G → extrae 25 campos (ver `references/domain-model.md` > initiatives)
-   - INSERT en `initiatives` con `status = 'persistido'`
+> **Prerequisito**: aplicar `migrations/002_dbi_v59_alignment.sql`, que alinea `initiatives` con la plantilla v5.9 (TRL/CRL/BRL a entero 1-9, `Tipo` con `mixta`, `return_horizon` en meses, `value_capture` libre, + `dbi_extra JSONB`). Ver `references/dbi-template.md` > Reconciliacion con el esquema actual. Correr: `goose -dir migrations postgres "$DATABASE_URL" up`.
+
+1. Implementar el parser segun `references/dbi-template.md` (contrato de parseo + delimitadores). Anclar con el golden fixture en `backend/tests/fixtures/dbi/`.
+2. Cuando Clara indica cierre (el flag definido en el prompt), el backend:
+   - Recupera el mensaje que contiene la plantilla DBI (delimitadores predecibles: bordes `═`, cabeceras `A.`–`G.`, lineas de campo `• Label: value`)
+   - Parsea encabezado + bloques A-G + pies → estructura normalizada (ver mapeo campo→columna)
+   - INSERT en `initiatives` (+ `dbi_extra JSONB` para campos nuevos) con `status = 'persistido'`
    - Autogenera `initiative_code` via `seq_initiative_code` (formato INI-AAAA-NNN)
    - Transiciona sesion a `status = 'completed'`
-2. Implementar `references/business-rules.md` > Parseo del DBI segun la plantilla exacta
+3. Parseo todo-o-nada: si faltan anclas o un nivel TRL/CRL/BRL es invalido, abortar sin persistir.
 
-**Check**: Completar una conversacion con Clara. La tabla `initiatives` tiene un registro nuevo con los 25 campos poblados. `initiative_code` generado. `sessions.status = 'completed'`.
+**Check**: el parser convierte `example_internal.txt` en `example_internal.expected.json`. Completar una conversacion con Clara genera un registro en `initiatives` con los campos poblados, `initiative_code` generado y `sessions.status = 'completed'`.
 
 ### Paso 8: Notificaciones
 

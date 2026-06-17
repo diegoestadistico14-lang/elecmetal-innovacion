@@ -1,0 +1,57 @@
+══════════════════════════════════════════
+DOCUMENTO BASE DE INICIATIVA
+Título: Mantenimiento predictivo de hornos | Fecha: 2026-06-10 | Área: Fundición Planta Colina | Postulante: María Rojas
+Tipo: Interna
+══════════════════════════════════════════
+
+RESUMEN EJECUTIVO: Las paradas no planificadas de los hornos de inducción generan pérdidas de producción. Proponemos sensores de vibración y temperatura con alertas tempranas para anticipar fallas. Impacto estimado: USD 120.000/año en producción recuperada.
+
+A. PROBLEMA
+• Problema: Los hornos de inducción se detienen sin aviso por fallas en bobinas y refractario.
+• Por qué importa: Cada parada no planificada cuesta turnos completos de producción y daña el refractario.
+• Quién lo tiene: El equipo de operaciones de fundición y mantenimiento de Planta Colina.
+• Cómo se resuelve hoy: Mantenimiento correctivo reactivo y rondas manuales sin datos en tiempo real.
+
+B. SOLUCIÓN
+• Descripción: Red de sensores IoT de vibración y temperatura en hornos, con un modelo que detecta patrones de falla y emite alertas tempranas.
+• Diferenciador y grado de novedad: mejora relevante — combina sensores de bajo costo con el histórico de fallas propio de Elecmetal.
+• Competencia / sustitutos: identificados — existen suites SCADA comerciales, pero no calibradas a nuestros hornos.
+• Impacto económico: USD 120.000/año — Fuente: registro de paradas 2025 — Beneficiario: Elecmetal — Clasificación: Medio
+• TRL: 4 — Evidencia: prueba de sensores integrados en banco de laboratorio, mayo 2026.
+• Escalabilidad: Interna
+• Mercado / repetibilidad: otros hornos de plantas similares
+
+C. CLIENTE
+• Interno: Jefatura de Operaciones de Fundición
+• Externo: No aplica
+• Tipo de cliente objetivo: área usuaria interna
+• CRL: 5 — Evidencia: el área pidió avanzar y aportó requerimientos en reunión de abril 2026.
+
+D. ALINEAMIENTO (asignado por innovación)
+• Foco: por asignar
+• Horizonte: por asignar
+
+E. EQUIPO Y RECURSOS
+• Área del postulante: Fundición Planta Colina
+• Equipo interno: María Rojas (ingeniería de procesos), un técnico de mantenimiento
+• Equipo externo: No aplica
+• Patrocinador: Carlos Méndez / Gerente de Operaciones / Planta Colina
+• Apoyo recibido: espacio en planta para piloto
+• Otros recursos necesarios: parciales
+• Duración estimada: 8 meses
+
+F. RIESGO E INCERTIDUMBRE
+• Duda principal: si los sensores resisten las condiciones de temperatura del horno.
+• Condición clave: «Esto funciona si las alertas anticipan la falla con al menos 24 horas»
+• Captura de valor: ahorro por producción recuperada y menor daño de refractario
+• Incertidumbre: cliente baja / solución media / modelo media
+• BRL: 4 — Evidencia: caso de ahorro con costo de implementación y ahorro anual estimados, fuente registro 2025.
+
+G. HITOS
+• Técnicos/operativos: piloto en un horno + 2026-12-01 + reducción de 30% en paradas no planificadas
+• Económicos/financieros: validar ahorro de USD 120k + 2027-06-01 + ahorro neto positivo
+• Horizonte de retorno: 12
+
+EVIDENCIA ADJUNTA: registro_paradas_2025.xlsx, foto_banco_sensores.jpg
+BLOQUES PENDIENTES: ninguno
+══════════════════════════════════════════
