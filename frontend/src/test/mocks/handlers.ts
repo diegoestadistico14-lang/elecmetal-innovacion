@@ -245,16 +245,11 @@ export const handlers = [
       metadata: null,
       created_at: now,
     };
-    const assistantMsg = {
-      id: ++messageIdCounter,
-      session_id: Number(params.sessionId),
-      role: "assistant" as const,
-      content: "Clara no está disponible por ahora. Intentaremos conectarla pronto. Mientras tanto, tu mensaje ha sido registrado.",
-      metadata: null,
-      created_at: now,
-    };
+    // Con OpenAI real, la respuesta del asistente llega via SSE stream.
+    // Solo devolvemos el user_message; el assistant_message se obtiene
+    // cuando el frontend refetcha los mensajes tras recibir [DONE].
     return HttpResponse.json(
-      { user_message: userMsg, assistant_message: assistantMsg },
+      { user_message: userMsg },
       { status: 201 },
     );
   }),

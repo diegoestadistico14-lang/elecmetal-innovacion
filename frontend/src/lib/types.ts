@@ -52,7 +52,9 @@ export interface MessagesResponse {
 
 export interface SendMessageResponse {
   user_message: Message;
-  assistant_message: Message;
+  /** Solo presente en modo placeholder (sin OpenAI). Con OpenAI real, la
+   * respuesta del asistente llega via SSE stream y se persiste al final. */
+  assistant_message?: Message;
 }
 
 // ─── Error Types ──────────────────────────────────────────────

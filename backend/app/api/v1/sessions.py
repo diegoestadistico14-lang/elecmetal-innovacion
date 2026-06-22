@@ -10,11 +10,6 @@ from app.core.security import get_current_user
 
 router = APIRouter()
 
-PLACEHOLDER_RESPONSE = (
-    "Clara no esta disponible por ahora. Intentaremos conectarla pronto. "
-    "Mientras tanto, tu mensaje ha sido registrado."
-)
-
 
 class CreateSessionRequest(BaseModel):
     agent_type: str = Field(..., pattern="^(clara|analista_oportunidad)$")
@@ -239,7 +234,11 @@ async def send_message(
     body: SendMessageRequest,
     user: dict = Depends(get_current_user),
 ):
-    """Envia un mensaje del usuario y recibe respuesta placeholder del asistente."""
+    """Envia un mensaje del usuario a la sesion.
+
+    Solo persiste el user_message. La respuesta del asistente se streamea
+    via GET /sessions/{id}/stream y se persiste al completar el stream.
+    """
     pool = get_pool()
     async with pool.acquire() as conn:
         # Validar sesion: existe, ownership, activa
@@ -282,7 +281,6 @@ async def send_message(
         )
 
     async with pool.acquire() as conn:
-        # Insertar mensaje del usuario
         user_msg = await conn.fetchrow(
             """
             INSERT INTO messages (session_id, role, content)
@@ -291,17 +289,6 @@ async def send_message(
             """,
             session_id,
             body.content,
-        )
-
-        # Insertar respuesta placeholder del asistente
-        assistant_msg = await conn.fetchrow(
-            """
-            INSERT INTO messages (session_id, role, content)
-            VALUES ($1, 'assistant', $2)
-            RETURNING id, session_id, role, content, metadata, created_at
-            """,
-            session_id,
-            PLACEHOLDER_RESPONSE,
         )
 
     return {
@@ -313,52 +300,55 @@ async def send_message(
             "metadata": user_msg["metadata"],
             "created_at": user_msg["created_at"].isoformat() if user_msg["created_at"] else None,
         },
-        "assistant_message": {
-            "id": assistant_msg["id"],
-            "session_id": assistant_msg["session_id"],
-            "role": assistant_msg["role"],
-            "content": assistant_msg["content"],
-            "metadata": assistant_msg["metadata"],
-            "created_at": assistant_msg["created_at"].isoformat() if assistant_msg["created_at"] else None,
-        },
     }
 
 
 # ─── SSE Streaming ──────────────────────────────────────────────────────────
 
 
-def _tokenize(text: str) -> list[str]:
-    """Divide texto en tokens (palabras con espacios) para streaming SSE."""
-    tokens: list[str] = []
-    current = ""
-    for ch in text:
-        if ch == " ":
-            if current:
-                tokens.append(current)
-            current = ""
-            tokens.append(" ")
-        else:
-            current += ch
-    if current:
-        tokens.append(current)
-    return tokens
-
-
 async def _sse_event_generator(
-    tokens: list[str],
+    session_id: int,
+    agent_type: str,
     resume_from: int = 0,
-    chunk_delay_ms: int = 40,
 ):
-    """Generador asincrono que emite eventos SSE con formato data: {"token":"..."}.
+    """Generador asincrono que emite tokens desde OpenAI via SSE.
 
-    Respeta resume_from para reconexiones: omite los primeros N tokens ya recibidos.
+    Formato: data: {"token":"..."} + data: [DONE].
+    Respeta resume_from para reconexiones: omite los primeros N tokens.
+    Al completar el stream, persiste el mensaje completo del asistente en DB.
     """
-    for i, token in enumerate(tokens):
-        if i < resume_from:
-            continue
-        payload = json.dumps({"token": token}, ensure_ascii=False)
-        yield f"data: {payload}\n\n"
-        await asyncio.sleep(chunk_delay_ms / 1000.0)
+    from app.services.agent_runner import (
+        stream_agent_response,
+        persist_assistant_message,
+    )
+
+    accumulated: list[str] = []
+    token_index = 0
+
+    try:
+        async for token in stream_agent_response(session_id, agent_type):
+            accumulated.append(token)
+            if token_index >= resume_from:
+                payload = json.dumps({"token": token}, ensure_ascii=False)
+                yield f"data: {payload}\n\n"
+            token_index += 1
+
+        # Persistir el mensaje completo del asistente
+        full_content = "".join(accumulated)
+        if full_content.strip():
+            try:
+                await persist_assistant_message(session_id, full_content)
+            except Exception:
+                # Error persistiendo no debe romper el stream
+                pass
+
+    except Exception:
+        # Error inesperado — notificar al frontend
+        error_token = json.dumps(
+            {"token": "\n\n[Error inesperado. Por favor intenta de nuevo.]"},
+            ensure_ascii=False,
+        )
+        yield f"data: {error_token}\n\n"
 
     yield "data: [DONE]\n\n"
 
@@ -373,7 +363,7 @@ async def stream_response(
     ),
     user: dict = Depends(get_current_user),
 ):
-    """SSE stream de la respuesta del asistente.
+    """SSE stream de la respuesta del asistente via OpenAI.
 
     El frontend (B2) espera este endpoint con formato:
       data: {"token":"Hola"}
@@ -385,7 +375,7 @@ async def stream_response(
     pool = get_pool()
     async with pool.acquire() as conn:
         session = await conn.fetchrow(
-            "SELECT id, user_id::text, status FROM sessions WHERE id = $1",
+            "SELECT id, user_id::text, status, agent_type FROM sessions WHERE id = $1",
             session_id,
         )
 
@@ -422,11 +412,14 @@ async def stream_response(
             },
         )
 
-    tokens = _tokenize(PLACEHOLDER_RESPONSE)
     start_from = resume_from if resume_from is not None else 0
 
     return StreamingResponse(
-        _sse_event_generator(tokens, resume_from=start_from),
+        _sse_event_generator(
+            session_id,
+            agent_type=session["agent_type"],
+            resume_from=start_from,
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

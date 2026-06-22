@@ -30,7 +30,13 @@ export function useSendMessage(sessionId: number) {
     onSuccess: (data) => {
       queryClient.setQueryData<Message[]>(
         MESSAGES_KEY(sessionId),
-        (old = []) => [...(old || []), data.user_message, data.assistant_message],
+        (old = []) => {
+          const newMessages = [data.user_message];
+          if (data.assistant_message) {
+            newMessages.push(data.assistant_message);
+          }
+          return [...(old || []), ...newMessages];
+        },
       );
     },
   });
