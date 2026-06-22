@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
 import Sidebar from "@/components/layout/sidebar";
+import { fetchMe } from "@/lib/api";
 
 export default async function DashboardLayout({
   children,
@@ -8,7 +9,23 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // Intentar obtener el rol del backend
+  let role: string | null = null;
+  if (session?.access_token) {
+    try {
+      const profile = await fetchMe(session.access_token);
+      role = profile.role;
+    } catch {
+      // Backend no disponible — sin rol
+    }
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -33,7 +50,7 @@ export default async function DashboardLayout({
           </aside>
         }
       >
-        <Sidebar user={{ email: user?.email ?? null }} />
+        <Sidebar user={{ email: user?.email ?? null, role }} />
       </Suspense>
       <main className="flex-1 bg-gray-50 p-8">{children}</main>
     </div>

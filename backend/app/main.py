@@ -44,4 +44,6 @@ app.include_router(me_router, prefix="/api/v1")
 app.include_router(sessions_router, prefix="/api/v1")
 
 # Próximos routers (agregar a medida que se implementen):
-# from app.api.v1 import initiatives, evaluations
+from app.api.v1.initiatives import router as initiatives_router
+app.include_router(initiatives_router, prefix="/api/v1")
+# from app.api.v1 import evaluations

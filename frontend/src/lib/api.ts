@@ -6,6 +6,9 @@ import type {
   Message,
   MessagesResponse,
   SendMessageResponse,
+  Initiative,
+  InitiativeListResponse,
+  InitiativeStatus,
 } from "./types";
 
 // ─── Constants ────────────────────────────────────────────────
@@ -117,6 +120,28 @@ export async function sendMessage(
       body: JSON.stringify({ content }),
     },
   );
+}
+
+export async function fetchInitiatives(
+  token: string,
+  params?: { status?: InitiativeStatus; cursor?: number; limit?: number },
+): Promise<InitiativeListResponse> {
+  const search = new URLSearchParams();
+  if (params?.status) search.set("status", params.status);
+  if (params?.cursor) search.set("cursor", String(params.cursor));
+  if (params?.limit) search.set("limit", String(params.limit));
+  const qs = search.toString();
+  return request<InitiativeListResponse>(
+    token,
+    `/api/v1/initiatives${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export async function fetchInitiative(
+  token: string,
+  id: number,
+): Promise<Initiative> {
+  return request<Initiative>(token, `/api/v1/initiatives/${id}`);
 }
 
 export async function healthCheck() {
