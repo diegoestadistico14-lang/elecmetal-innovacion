@@ -3,6 +3,9 @@ import type {
   Session,
   SessionsResponse,
   AgentType,
+  Message,
+  MessagesResponse,
+  SendMessageResponse,
 } from "./types";
 
 // ─── Constants ────────────────────────────────────────────────
@@ -77,6 +80,43 @@ export async function createSession(
     method: "POST",
     body: JSON.stringify({ agent_type: agentType }),
   });
+}
+
+export async function fetchSession(
+  token: string,
+  sessionId: number,
+): Promise<Session> {
+  return request<Session>(token, `/api/v1/sessions/${sessionId}`);
+}
+
+export async function fetchMessages(
+  token: string,
+  sessionId: number,
+  params?: { cursor?: number; limit?: number },
+): Promise<MessagesResponse> {
+  const search = new URLSearchParams();
+  if (params?.cursor) search.set("cursor", String(params.cursor));
+  if (params?.limit) search.set("limit", String(params.limit));
+  const qs = search.toString();
+  return request<MessagesResponse>(
+    token,
+    `/api/v1/sessions/${sessionId}/messages${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export async function sendMessage(
+  token: string,
+  sessionId: number,
+  content: string,
+): Promise<SendMessageResponse> {
+  return request<SendMessageResponse>(
+    token,
+    `/api/v1/sessions/${sessionId}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    },
+  );
 }
 
 export async function healthCheck() {

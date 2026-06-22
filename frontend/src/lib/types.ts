@@ -29,6 +29,34 @@ export interface SessionsResponse {
   data: Session[];
 }
 
+// ─── Message Types ────────────────────────────────────────────
+
+export type MessageRole = "user" | "assistant" | "system";
+
+export interface Message {
+  id: number;
+  session_id: number;
+  role: MessageRole;
+  content: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface MessagesResponse {
+  data: Message[];
+  pagination: {
+    next_cursor: number | null;
+    has_more: boolean;
+  };
+}
+
+export interface SendMessageResponse {
+  user_message: Message;
+  assistant_message: Message;
+}
+
+// ─── Error Types ──────────────────────────────────────────────
+
 export interface ApiErrorBody {
   error: {
     code: string;
