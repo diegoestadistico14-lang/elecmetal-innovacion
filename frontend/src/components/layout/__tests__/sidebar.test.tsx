@@ -56,7 +56,7 @@ describe("Sidebar", () => {
 
   it("muestra skeletons durante loading", () => {
     mockUseSessions({ isLoading: true });
-    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl" }} />);
+    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl", role: null }} />);
 
     const skeletons = document.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
@@ -64,14 +64,14 @@ describe("Sidebar", () => {
 
   it("muestra mensaje cuando no hay sesiones", () => {
     mockUseSessions({ data: [] });
-    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl" }} />);
+    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl", role: null }} />);
 
     expect(screen.getByText(/No hay sesiones todavía/)).toBeInTheDocument();
   });
 
   it("muestra mensaje de error con botón reintentar", () => {
     mockUseSessions({ isError: true });
-    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl" }} />);
+    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl", role: null }} />);
 
     expect(screen.getByText(/Error al cargar sesiones/)).toBeInTheDocument();
     expect(screen.getByText(/Reintentar/)).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("Sidebar", () => {
         },
       ],
     });
-    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl" }} />);
+    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl", role: null }} />);
 
     expect(screen.getByText(/Clara/)).toBeInTheDocument();
     expect(screen.getByText(/Test session/)).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe("Sidebar", () => {
 
   it("abre el modal al hacer clic en Nueva sesión", () => {
     mockUseSessions({ data: [] });
-    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl" }} />);
+    renderWithProviders(<Sidebar user={{ email: "test@elecmetal.cl", role: null }} />);
 
     fireEvent.click(screen.getByText(/Nueva sesión/));
     expect(screen.getByText(/¿Qué tipo de sesión quieres crear?/)).toBeInTheDocument();

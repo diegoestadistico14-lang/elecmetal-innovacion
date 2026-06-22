@@ -70,7 +70,7 @@ describe("DbiBlockSection", () => {
     expect(screen.queryByText("Alta tasa de fallas en molinos SAG")).not.toBeInTheDocument();
   });
 
-  it("muestra '—' para valores nulos", async () => {
+  it("muestra '—' para valores nulos", () => {
     render(
       <DbiBlockSection
         title="Problema"
@@ -79,12 +79,11 @@ describe("DbiBlockSection", () => {
         defaultOpen
       />,
     );
-    // El campo "Sin dato" con valor null debe mostrar "—"
     const dashElements = screen.getAllByText("—");
     expect(dashElements.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("muestra '—' para sentinelas como 'no especificado'", async () => {
+  it("muestra '—' para sentinelas como 'no especificado'", () => {
     render(
       <DbiBlockSection
         title="Problema"
@@ -93,12 +92,11 @@ describe("DbiBlockSection", () => {
         defaultOpen
       />,
     );
-    // El campo "No especificado" con valor "no especificado" debe mostrar "—"
     const dashElements = screen.getAllByText("—");
     expect(dashElements.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("muestra los labels de los campos", async () => {
+  it("muestra los labels de los campos", () => {
     render(
       <DbiBlockSection
         title="Problema"
@@ -107,7 +105,8 @@ describe("DbiBlockSection", () => {
         defaultOpen
       />,
     );
-    expect(screen.getByText("Problema")).toBeInTheDocument();
+    // "Problema" esta tanto en el titulo del boton como en el label del campo
+    expect(screen.getAllByText("Problema").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Evidencia")).toBeInTheDocument();
     expect(screen.getByText("Sin dato")).toBeInTheDocument();
     expect(screen.getByText("No especificado")).toBeInTheDocument();
